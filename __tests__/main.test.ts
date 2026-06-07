@@ -8,7 +8,7 @@ jest.mock('@actions/core', () => {
     };
 });
 
-import * as fs from "fs";
+import * as fs from 'node:fs';
 import {main} from "../src/main";
 import {write} from "../src/write";
 

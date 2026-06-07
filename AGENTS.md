@@ -23,6 +23,7 @@
 - **GitHub Actions SDK**: `@actions/core` for input handling, logging, secret masking, and exporting variables
 - **Dotenv parsing**: `dotenv` (only `dotenv.parse` is used to read existing files)
 - **Test framework**: Jest with `ts-jest`, running in the Node environment
+- **Linter**: [Oxlint](https://oxc.rs/docs/guide/usage/linter.html) — high-performance JavaScript/TypeScript linter
 - **Release automation**: `semantic-release` via `cycjimmy/semantic-release-action@v3`, configured in `.releaserc.yaml`
 
 ## Project Structure
@@ -34,6 +35,7 @@
 ├── bun.lock                            # Bun lockfile
 ├── tsconfig.json                       # TypeScript compiler options
 ├── jest.config.js                      # Jest preset: ts-jest, node environment
+├── .oxlintrc.json                      # Oxlint configuration
 ├── .releaserc.yaml                     # semantic-release plugins
 ├── src/
 │   ├── main.ts                         # Entry point: reads inputs and dispatches
@@ -80,6 +82,16 @@ npx jest
 bun run build
 # or
 npx ncc build src/main.ts -o dist
+
+# Run the linter
+bun run lint
+# or
+npx oxlint .
+
+# Run the linter with auto-fix
+bun run lint:fix
+# or
+npx oxlint --fix .
 ```
 
 **Important**: After any source change, you must run `bun run build` and commit the updated `dist/index.js`, because `action.yml` points directly at the bundled file.
@@ -150,7 +162,7 @@ plugins:
 - **Imports**: `import * as core from '@actions/core'` and explicit named imports from sibling modules
 - **File naming**: camelCase for source files (`writeVariableName.ts`, etc.)
 - **Strict TypeScript**: `tsconfig.json` enables `strict`, `noImplicitAny`, and `esModuleInterop`
-- **No formatter or linter is currently configured** (no `.eslintrc`, `.prettierrc`, etc.); keep new code consistent with the existing 4-space, single-quote style
+- **Linter**: Oxlint is configured via `package.json` scripts. Keep new code consistent with the existing 4-space, single-quote style and ensure it passes `bun run lint`
 
 ## Security Considerations
 
@@ -168,5 +180,7 @@ plugins:
 | Install deps | `bun install --frozen-lockfile` |
 | Run tests | `bun run test` |
 | Build bundle | `bun run build` |
+| Run linter | `bun run lint` |
+| Fix linter issues | `bun run lint:fix` |
 | Rebuild after source edits | `bun run build` + commit `dist/index.js` |
 | Run action locally in CI | Use the steps in `.github/workflows/test.yml` |

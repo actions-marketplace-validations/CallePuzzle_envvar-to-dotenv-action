@@ -6,7 +6,9 @@
   "license": "GPL-3.0-only",
   "scripts": {
     "build": "npx ncc build src/main.ts -o dist",
-    "test": "npx jest"
+    "test": "npx jest",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix ."
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
@@ -21,6 +23,7 @@
     "@types/node": "^25.9.2",
     "@vercel/ncc": "^0.38.4",
     "jest": "^30.4.2",
+    "oxlint": "^1.68.0",
     "ts-jest": "^29.4.11",
     "typescript": "^6.0.3"
   }

@@ -5,27 +5,35 @@ interface InputNamesByFilter {
     envPath: string
 }
 
+const isUnescapedQuantifier = (pattern: string, index: number): boolean => {
+    let backslashCount = 0;
+    for (let i = index - 1; i >= 0 && pattern[i] === '\\'; i--) {
+        backslashCount++;
+    }
+    return backslashCount % 2 === 0;
+};
+
+const hasNestedQuantifier = (pattern: string, closeIndex: number): boolean => {
+    const openChar = pattern[closeIndex] === ')' ? '(' : '[';
+    for (let i = closeIndex - 1; i >= 0; i--) {
+        if (pattern[i] === openChar) {
+            return false;
+        }
+        if ((pattern[i] === '+' || pattern[i] === '*') && isUnescapedQuantifier(pattern, i)) {
+            return true;
+        }
+    }
+    return false;
+};
+
 const isSafeRegexPattern = (pattern: string): boolean => {
     // Reject common ReDoS patterns: nested quantifiers like (a+)+, (a*)*, etc.
     // Implemented without regular expressions to avoid ReDoS in the checker itself.
     for (let i = 0; i < pattern.length - 1; i++) {
-        if ((pattern[i] === ')' || pattern[i] === ']') && (pattern[i + 1] === '+' || pattern[i + 1] === '*')) {
-            const openChar = pattern[i] === ')' ? '(' : '[';
-            for (let j = i - 1; j >= 0; j--) {
-                if (pattern[j] === openChar) {
-                    break;
-                }
-                if (pattern[j] === '+' || pattern[j] === '*') {
-                    // Check if the quantifier is escaped (preceded by an odd number of backslashes)
-                    let backslashes = 0;
-                    for (let k = j - 1; k >= 0 && pattern[k] === '\\'; k--) {
-                        backslashes++;
-                    }
-                    if (backslashes % 2 === 0) {
-                        return false;
-                    }
-                }
-            }
+        const isClosingGroup = pattern[i] === ')' || pattern[i] === ']';
+        const isFollowedByQuantifier = pattern[i + 1] === '+' || pattern[i + 1] === '*';
+        if (isClosingGroup && isFollowedByQuantifier && hasNestedQuantifier(pattern, i)) {
+            return false;
         }
     }
     return true;
@@ -35,7 +43,7 @@ export const writeVariableNamesByFilter = (input: InputNamesByFilter): void => {
     let re: RegExp;
     try {
         re = new RegExp(input.variableNamesByFilter);
-    } catch (error) {
+    } catch {
         throw new Error(`Invalid regex pattern: ${input.variableNamesByFilter}`);
     }
 

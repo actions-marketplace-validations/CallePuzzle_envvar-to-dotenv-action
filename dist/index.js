@@ -26200,8 +26200,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.write = void 0;
 const core = __importStar(__nccwpck_require__(7484));
-const fs = __importStar(__nccwpck_require__(9896));
-const path = __importStar(__nccwpck_require__(6928));
+const fs = __importStar(__nccwpck_require__(3024));
+const path = __importStar(__nccwpck_require__(6760));
 const dotenv_1 = __importDefault(__nccwpck_require__(8889));
 const write = (variable) => {
     core.setSecret(variable.value);
@@ -26283,27 +26283,33 @@ exports.writeVariableNames = writeVariableNames;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.writeVariableNamesByFilter = void 0;
 const write_1 = __nccwpck_require__(2868);
+const isUnescapedQuantifier = (pattern, index) => {
+    let backslashCount = 0;
+    for (let i = index - 1; i >= 0 && pattern[i] === '\\'; i--) {
+        backslashCount++;
+    }
+    return backslashCount % 2 === 0;
+};
+const hasNestedQuantifier = (pattern, closeIndex) => {
+    const openChar = pattern[closeIndex] === ')' ? '(' : '[';
+    for (let i = closeIndex - 1; i >= 0; i--) {
+        if (pattern[i] === openChar) {
+            return false;
+        }
+        if ((pattern[i] === '+' || pattern[i] === '*') && isUnescapedQuantifier(pattern, i)) {
+            return true;
+        }
+    }
+    return false;
+};
 const isSafeRegexPattern = (pattern) => {
     // Reject common ReDoS patterns: nested quantifiers like (a+)+, (a*)*, etc.
     // Implemented without regular expressions to avoid ReDoS in the checker itself.
     for (let i = 0; i < pattern.length - 1; i++) {
-        if ((pattern[i] === ')' || pattern[i] === ']') && (pattern[i + 1] === '+' || pattern[i + 1] === '*')) {
-            const openChar = pattern[i] === ')' ? '(' : '[';
-            for (let j = i - 1; j >= 0; j--) {
-                if (pattern[j] === openChar) {
-                    break;
-                }
-                if (pattern[j] === '+' || pattern[j] === '*') {
-                    // Check if the quantifier is escaped (preceded by an odd number of backslashes)
-                    let backslashes = 0;
-                    for (let k = j - 1; k >= 0 && pattern[k] === '\\'; k--) {
-                        backslashes++;
-                    }
-                    if (backslashes % 2 === 0) {
-                        return false;
-                    }
-                }
-            }
+        const isClosingGroup = pattern[i] === ')' || pattern[i] === ']';
+        const isFollowedByQuantifier = pattern[i + 1] === '+' || pattern[i + 1] === '*';
+        if (isClosingGroup && isFollowedByQuantifier && hasNestedQuantifier(pattern, i)) {
+            return false;
         }
     }
     return true;
@@ -26313,7 +26319,7 @@ const writeVariableNamesByFilter = (input) => {
     try {
         re = new RegExp(input.variableNamesByFilter);
     }
-    catch (error) {
+    catch (_a) {
         throw new Error(`Invalid regex pattern: ${input.variableNamesByFilter}`);
     }
     if (!isSafeRegexPattern(input.variableNamesByFilter)) {
@@ -26459,6 +26465,22 @@ module.exports = require("node:crypto");
 
 "use strict";
 module.exports = require("node:events");
+
+/***/ }),
+
+/***/ 3024:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:fs");
+
+/***/ }),
+
+/***/ 6760:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:path");
 
 /***/ }),
 
