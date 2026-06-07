@@ -5,9 +5,28 @@ interface InputNamesByFilter {
     envPath: string
 }
 
+const isSafeRegexPattern = (pattern: string): boolean => {
+    // Reject common ReDoS patterns: nested quantifiers like (a+)+, (a*)*, etc.
+    const dangerousPatterns = [
+        /\([^)]*[\+\*][^)]*\)[\+\*]/,
+        /\[[^\]]*[\+\*][^\]]*\][\+\*]/,
+    ];
+    return !dangerousPatterns.some(dp => dp.test(pattern));
+};
+
 export const writeVariableNamesByFilter = (input: InputNamesByFilter): void => {
+    let re: RegExp;
+    try {
+        re = new RegExp(input.variableNamesByFilter);
+    } catch (error) {
+        throw new Error(`Invalid regex pattern: ${input.variableNamesByFilter}`);
+    }
+
+    if (!isSafeRegexPattern(input.variableNamesByFilter)) {
+        throw new Error(`Potentially unsafe regex pattern detected: ${input.variableNamesByFilter}`);
+    }
+
     for (let envVar in process.env) {
-        const re = new RegExp(input.variableNamesByFilter);
         if (re.test(envVar)) {
             const value = process.env[envVar];
 
