@@ -1,3 +1,4 @@
 .idea
 node_modules
+__tests__/.env
 __tests__/results/.env
