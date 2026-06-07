@@ -7,11 +7,28 @@ interface InputNamesByFilter {
 
 const isSafeRegexPattern = (pattern: string): boolean => {
     // Reject common ReDoS patterns: nested quantifiers like (a+)+, (a*)*, etc.
-    const dangerousPatterns = [
-        /\([^)]*[\+\*][^)]*\)[\+\*]/,
-        /\[[^\]]*[\+\*][^\]]*\][\+\*]/,
-    ];
-    return !dangerousPatterns.some(dp => dp.test(pattern));
+    // Implemented without regular expressions to avoid ReDoS in the checker itself.
+    for (let i = 0; i < pattern.length - 1; i++) {
+        if ((pattern[i] === ')' || pattern[i] === ']') && (pattern[i + 1] === '+' || pattern[i + 1] === '*')) {
+            const openChar = pattern[i] === ')' ? '(' : '[';
+            for (let j = i - 1; j >= 0; j--) {
+                if (pattern[j] === openChar) {
+                    break;
+                }
+                if (pattern[j] === '+' || pattern[j] === '*') {
+                    // Check if the quantifier is escaped (preceded by an odd number of backslashes)
+                    let backslashes = 0;
+                    for (let k = j - 1; k >= 0 && pattern[k] === '\\'; k--) {
+                        backslashes++;
+                    }
+                    if (backslashes % 2 === 0) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
 };
 
 export const writeVariableNamesByFilter = (input: InputNamesByFilter): void => {
